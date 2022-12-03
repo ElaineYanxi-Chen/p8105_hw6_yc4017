@@ -1,0 +1,97 @@
+---
+title: "p8105 Homework 6"
+author: "Elaine Yanxi Chen"
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+## Packages and settings
+
+First we load the packages necessary to knit this document.
+
+```{r packages and settings, message = FALSE}
+library(tidyverse)
+library(mgcv)
+library(modelr)
+library(viridis)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	message = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+set.seed(1)
+```
+
+
+## Problem 2: Homicides in Baltimore, MD
+
+### Data Import
+
+After loading the dataset, we want to do some initial cleaning and tidying following these criteria below:
+
+* We want to load the data on homicides in 50 large U.S. cities. 
+* We want to create a `city_state` variable and a binary variable indicating whether the homicide is solved.
+* Omit cities Dallas, TX; Phoenix, AZ; and Kansas City, MO since they do not report victim race. Omit Tulsa, AL because this is a data entry mistake.
+* We will limit the analysis for whom `victim_race` is `white` or `black`.
+* Make sure that `victim_age` is a numeric variable.
+
+```{r}
+homicide_df = 
+  read_csv("data/homicide-data.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    city_state = str_c(city, state, sep = ","),
+    resolved = as.numeric(disposition == "Closed by arrest"),
+    victim_age = as.numeric(victim_age),
+    victim_race = fct_relevel(victim_race, "White")
+  ) %>% 
+  filter(
+    !city_state %in% c("Dallas,TX", "Phoenix,AZ", "Kansas City,MO", "Tulsa,AL"),
+    victim_race %in% c("White", "Black"))
+```
+
+
+### Baltimore, MD
+
+We are interested in using the `glm` function to fit a logistic regression model with resolved vs unresolved as the outcome, and victim age, sex, and race as predictors.
+
+To do so, we will first generate a dataset containing these variables only.
+
+```{r}
+baltimore_df =
+  homicide_df %>% 
+  filter(city_state == "Baltimore,MD") %>% 
+  select(resolved, victim_age, victim_race, victim_sex)
+```
+
+Now we will run the logistic regression model using `glm` and save the output as an R object.
+
+```{r}
+fit_logistic = 
+  baltimore_df %>% 
+  glm(resolved ~ victim_age + victim_sex + victim_race, data = ., family = binomial()) 
+```
+
+```{r}
+fit_logistic %>% 
+  broom::tidy() %>% 
+  mutate(OR = exp(estimate)) %>%
+  select(term, log_OR = estimate, OR, p.value) %>% 
+  knitr::kable(digits = 3)
+```
+

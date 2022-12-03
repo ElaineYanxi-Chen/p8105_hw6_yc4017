@@ -1,1 +1,1 @@
-# p8105_hw6_yc4017
+# This is the repo for DS I p8105 Homework 6.
