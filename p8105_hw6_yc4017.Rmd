@@ -180,3 +180,16 @@ glm_city %>%
   )
 ```
 
+
+## Problem 3: Child's Birthweight
+
+In this problem, we will analyze data gathered on child's birthweight and several variables.
+
+We will first load the data and inspect it, before cleanning it for regression analysis.
+
+```{r}
+childbw_df = 
+  read_csv("data/birthweight.csv") %>% 
+  janitor::clean_names()
+```
+
