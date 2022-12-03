@@ -118,4 +118,47 @@ We see that keeping all other variables fixed, homicides in which the victim is 
 
 ### Iterating `glm` for each city
 
+Now we want to run `glm` for each of the cities in the datset.
+
+First, we will create a dataset containing all cities but only with variables of interest.
+
+```{r}
+homicide_glm_df =
+  homicide_df %>% 
+  select(city_state, resolved, victim_age, victim_race, victim_sex)
+```
+
+Now we will map the `glm` function across all cities, tidy the output, and finally filter for `victim_sex` and extract the adjusted odds ratio (and CI) for solving homicides comparing male victims to female victims. 
+
+```{r}
+nest_glm_city =
+  homicide_glm_df %>% 
+  nest(df = -city_state) %>% 
+  mutate(
+    models = map(.x = df, ~glm(resolved ~ victim_age + victim_sex + victim_race, data = .x, family = binomial())),
+    results = map(models, broom::tidy)
+  ) %>% 
+  select(city_state, results) %>% 
+  unnest(results)
+
+glm_city =
+  nest_glm_city %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    OR = exp(estimate),
+    CI_lower = exp(estimate - 1.96 * std_error),
+    CI_upper = exp(estimate + 1.96 * std_error)) %>% 
+  select(-c(std_error, statistic)) %>% 
+  filter(term == "victim_sexMale") %>% 
+  select(city_state, OR:CI_upper) 
+
+glm_city %>% 
+  knitr::kable(
+    digits = 3,
+    col.names = c("City, State", "Odds Ratio", "Lower 95% CI", "Upper 95% CI"))
+```
+
+
+### Plot for estimated ORs and CIs for each city
+
 
