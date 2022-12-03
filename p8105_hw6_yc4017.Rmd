@@ -50,7 +50,7 @@ After loading the dataset, we want to do some initial cleaning and tidying follo
 * We will limit the analysis for whom `victim_race` is `white` or `black`.
 * Make sure that `victim_age` is a numeric variable.
 
-```{r}
+```{r homicide_df}
 homicide_df = 
   read_csv("data/homicide-data.csv") %>% 
   janitor::clean_names() %>% 
@@ -72,7 +72,7 @@ We are interested in using the `glm` function to fit a logistic regression model
 
 To do so, we will first generate a dataset containing these variables only.
 
-```{r}
+```{r baltimore_df}
 baltimore_df =
   homicide_df %>% 
   filter(city_state == "Baltimore,MD") %>% 
@@ -81,17 +81,41 @@ baltimore_df =
 
 Now we will run the logistic regression model using `glm` and save the output as an R object.
 
-```{r}
+```{r fit_logistic}
 fit_logistic = 
   baltimore_df %>% 
   glm(resolved ~ victim_age + victim_sex + victim_race, data = ., family = binomial()) 
 ```
 
-```{r}
-fit_logistic %>% 
+```{r clean glm_baltimore}
+glm_baltimore = 
+  fit_logistic %>% 
   broom::tidy() %>% 
-  mutate(OR = exp(estimate)) %>%
-  select(term, log_OR = estimate, OR, p.value) %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    OR = exp(estimate),
+    CI_lower = exp(estimate - 1.96 * std_error),
+    CI_upper = exp(estimate + 1.96 * std_error)) %>% 
+  select(-c(std_error, statistic)) 
+
+glm_baltimore %>% 
   knitr::kable(digits = 3)
 ```
+
+After running the logistic regression model, we want to obtain the estimate and the confidence interval of the adjusted odds ratio for solving homicides comparing male victims to female victims keeping all other variables fixed. 
+
+```{r victim sex}
+glm_baltimore %>% 
+  filter(term == "victim_sexMale") %>% 
+  select(OR:CI_upper) %>% 
+  knitr::kable(
+    digits = 3,
+    col.names = c("Odds Ratio", "Lower 95% CI", "Upper 95% CI"))
+```
+
+We see that keeping all other variables fixed, homicides in which the victim is male are 57.4% less likely to be resolved than those in which the victim is female. We are 95% confident that the true odds ratio for the association between victim's sex and resolved homicides lies between 0.325 and 0.558. 
+
+
+### Iterating `glm` for each city
+
 
