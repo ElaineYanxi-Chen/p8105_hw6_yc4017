@@ -122,7 +122,7 @@ Now we want to run `glm` for each of the cities in the datset.
 
 First, we will create a dataset containing all cities but only with variables of interest.
 
-```{r}
+```{r homicide_glm_df}
 homicide_glm_df =
   homicide_df %>% 
   select(city_state, resolved, victim_age, victim_race, victim_sex)
@@ -130,7 +130,7 @@ homicide_glm_df =
 
 Now we will map the `glm` function across all cities, tidy the output, and finally filter for `victim_sex` and extract the adjusted odds ratio (and CI) for solving homicides comparing male victims to female victims. 
 
-```{r}
+```{r glm iteration}
 nest_glm_city =
   homicide_glm_df %>% 
   nest(df = -city_state) %>% 
@@ -163,8 +163,9 @@ glm_city %>%
 
 Lastly, we want to create a plot showing the estimated ORs and CIs for each city. We will also show it in a way so that cities are organized according to the their estimated OR. 
 
-```{r}
-glm_city %>% 
+```{r glm_plot}
+glm_plot = 
+  glm_city %>% 
   mutate(
     city_state = fct_reorder(city_state, OR, .desc = TRUE)
   ) %>% 
@@ -174,20 +175,29 @@ glm_city %>%
   geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper),
                 alpha = 0.5) +
   labs(
-    title = "Estimated Odds Ratios and 95% Confidence Intervals of Solved Homicides and Victim Sex for Large U.S.Cities",
+    title = "Estimated Odds Ratios and 95% Confidence Intervals of Solved Homicides and 
+    Victim Sex for Large U.S.Cities",
     x = "City, State",
     y = "Estimates Odds Ratios (95% Confidence Intervals)"
-  )
+  ) + 
+  geom_hline(yintercept = 1, colour = "red")
+
+glm_plot
 ```
+
+Examining the plot, here are a few comments:
+
+* The highest odds ratio was observed in Albuquerque, NM, and the lowest odds ratio was observed in New York, NY.
+* For most large US cities, homicides with female victims have higher odds of being resolved than those with male victims. A few cities are exceptions where homicides with male victims were more likely to be resolved: Albuquerque, NM; Stockton, CA; Fresno, CA; Nashville, TN; Richmond, VA.
 
 
 ## Problem 3: Child's Birthweight
 
 In this problem, we will analyze data gathered on child's birthweight and several variables.
 
-We will first load the data and inspect it, before cleanning it for regression analysis.
+We will first load the data and inspect it, before cleaning it for regression analysis.
 
-```{r}
+```{r load childbw}
 childbw_df = 
   read_csv("data/birthweight.csv") %>% 
   janitor::clean_names()
