@@ -161,4 +161,22 @@ glm_city %>%
 
 ### Plot for estimated ORs and CIs for each city
 
+Lastly, we want to create a plot showing the estimated ORs and CIs for each city. We will also show it in a way so that cities are organized according to the their estimated OR. 
+
+```{r}
+glm_city %>% 
+  mutate(
+    city_state = fct_reorder(city_state, OR, .desc = TRUE)
+  ) %>% 
+  ggplot(aes(x = city_state, y = OR)) + 
+  geom_point(alpha = 0.5) + 
+  theme(axis.text.x = element_text(angle = 80, hjust = 1)) +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper),
+                alpha = 0.5) +
+  labs(
+    title = "Estimated Odds Ratios and 95% Confidence Intervals of Solved Homicides and Victim Sex for Large U.S.Cities",
+    x = "City, State",
+    y = "Estimates Odds Ratios (95% Confidence Intervals)"
+  )
+```
 
