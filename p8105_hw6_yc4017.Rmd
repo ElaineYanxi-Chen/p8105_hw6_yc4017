@@ -238,7 +238,7 @@ own_mod = lm(bwt ~ wtgain + pnumlbw + smoken + frace + mrace + momage, data = ch
 
 We want to show a plot of model residuals against fitted values. In order to do so, we will use `add_predictions` and `add_residuals` to make this plot. 
 
-```{r}
+```{r own_mod plot}
 childbw_df %>% 
   modelr::add_predictions(own_mod) %>% 
   modelr::add_residuals(own_mod) %>% 
@@ -252,10 +252,47 @@ Looking at the residual plot, there doesn't seem to be any non-random pattern to
 
 First, we will build the two given models, one with main effects of length at birth (`blength`) and gestational age (`gaweeks`) ,and the other with main effects and all interactions of head circumference (`bhead`), length (`blength`), and sex (`babysex`).
 
-```{r}
+```{r given models}
 main_mod = lm(bwt ~ blength + gaweeks, data = childbw_df)
 
 int_mod = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = childbw_df)
 ```
 
 We will then make the comparison in terms of the cross-validated prediction error. To do so, we will use the functions including `crossv_mc` and those in `purrr`. 
+
+```{r crossv_mc}
+cv_df =
+  crossv_mc(childbw_df, 100) 
+
+cv_df = 
+  cv_df %>% 
+  mutate(
+    own_mod = map(train, ~lm(bwt ~ wtgain + pnumlbw + smoken + frace + mrace + momage, data = .x)),
+    main_mod = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    int_mod = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = .x))
+  ) %>% 
+  mutate(
+    rmse_own = map2_dbl(own_mod, test, ~rmse(model = .x, data = .y)),
+    rmse_main = map2_dbl(main_mod, test, ~rmse(model = .x, data = .y)),
+    rmse_int = map2_dbl(int_mod, test, ~rmse(model = .x, data = .y))
+  )
+```
+
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin() +
+  labs(
+    title = "Vionlin Plot Comparing Three Regression Models for Child's Birthweight",
+    x = "Model Name",
+    y = "Root Mean Squared Errors (RMSEs)"
+  )
+```
+
+Wow...my model is crap...
