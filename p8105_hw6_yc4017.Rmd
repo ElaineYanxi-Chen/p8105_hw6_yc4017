@@ -246,9 +246,16 @@ childbw_df %>%
   geom_point()
 ```
 
+Looking at the residual plot, there doesn't seem to be any non-random pattern to the plot, hence we might not be able to add another predictor to the model.
+
 ### Comparison with two other models
 
-```{r}
+First, we will build the two given models, one with main effects of length at birth (`blength`) and gestational age (`gaweeks`) ,and the other with main effects and all interactions of head circumference (`bhead`), length (`blength`), and sex (`babysex`).
 
+```{r}
+main_mod = lm(bwt ~ blength + gaweeks, data = childbw_df)
+
+int_mod = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = childbw_df)
 ```
 
+We will then make the comparison in terms of the cross-validated prediction error. To do so, we will use the functions including `crossv_mc` and those in `purrr`. 
