@@ -188,18 +188,67 @@ glm_plot
 Examining the plot, here are a few comments:
 
 * The highest odds ratio was observed in Albuquerque, NM, and the lowest odds ratio was observed in New York, NY.
-* For most large US cities, homicides with female victims have higher odds of being resolved than those with male victims. A few cities are exceptions where homicides with male victims were more likely to be resolved: Albuquerque, NM; Stockton, CA; Fresno, CA; Nashville, TN; Richmond, VA.
+* For most large US cities, homicides with female victims have higher odds of being resolved than those with male victims. A few cities are exceptions where homicides with male victims were more likely to be resolved: Albuquerque, NM; Stockton, CA; Fresno, CA; Nashville, TN; Richmond, VA. One thing to note is that the ORs for several of these cities had very wide 95% CIs and the results were statistically insignificant since the 95% CIs cross the null value of OR = 1.
+* Larger urban centres generally have OR < 1 with narrower 95% CIs, possibly due to a larger sample size from a larger population. Some examples include New York, NY; Chicago, IL; Pittsburgh, PA; San Francisco, CA.
 
 
 ## Problem 3: Child's Birthweight
 
 In this problem, we will analyze data gathered on child's birthweight and several variables.
 
+### Data import and cleaning
+
 We will first load the data and inspect it, before cleaning it for regression analysis.
+
+For certain variables such as `babysex` and `frace`, we will convert them from numeric to factor so that we can easily put them into regression models. In addition, we will check for missing data.
 
 ```{r load childbw}
 childbw_df = 
   read_csv("data/birthweight.csv") %>% 
-  janitor::clean_names()
+  janitor::clean_names() %>% 
+  mutate(
+    babysex = as.factor(babysex),
+    frace = as.factor(frace),
+    malform = as.factor(malform),
+    mrace = as.factor(mrace)
+  )
+
+sum(is.na(childbw_df))
+```
+
+From our intial analysis, it seems that there is no missing data in this child birthweight dataset since the count for missing data is `r sum(is.na(childbw_df))`.
+
+### Regression model for birthweight
+
+First, we want to build a regression model for birthweight based on hypothesized theories and/or data-driven model-building process. 
+
+I decide to research literature for known risk factors of low birthweight and compose my regression model as such. Based on this [article](https://www.cedars-sinai.org/health-library/diseases-and-conditions---pediatrics/v/very-low-birth-weight.html), I have decided to include the following risk factors:
+
+* Mother's weight gain during pregnancy in pounds (`wtgain`)
+* Previous number of low birth weight babies (`pnumlbw`)
+* Average number of cigarettes smoked per day during pregnancy (`smoken`)
+* Race of parents (`frace` and `mrace`)
+* Mother's age at delivery in years (`momage`)
+
+Of course there are other potential factors from this dataset that could affect low birthweight, but I do not want to include too many variables due to concerns about sample size.
+
+```{r build model}
+own_mod = lm(bwt ~ wtgain + pnumlbw + smoken + frace + mrace + momage, data = childbw_df)
+```
+
+We want to show a plot of model residuals against fitted values. In order to do so, we will use `add_predictions` and `add_residuals` to make this plot. 
+
+```{r}
+childbw_df %>% 
+  modelr::add_predictions(own_mod) %>% 
+  modelr::add_residuals(own_mod) %>% 
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point()
+```
+
+### Comparison with two other models
+
+```{r}
+
 ```
 
