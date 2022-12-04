@@ -107,10 +107,14 @@ The point of this is not to say you should always use the bootstrap -- it's poss
 
 After loading the dataset, we want to do some initial cleaning and tidying following these criteria below:
 
-* We want to load the data on homicides in 50 large U.S. cities. 
+* We want to load the data on homicides in 50 large U.S. cities.
+
 * We want to create a `city_state` variable and a binary variable indicating whether the homicide is solved.
+
 * Omit cities Dallas, TX; Phoenix, AZ; and Kansas City, MO since they do not report victim race. Omit Tulsa, AL because this is a data entry mistake.
+
 * We will limit the analysis for whom `victim_race` is `white` or `black`.
+
 * Make sure that `victim_age` is a numeric variable.
 
 ```{r homicide_df}
@@ -251,7 +255,9 @@ glm_plot
 Examining the plot, here are a few comments:
 
 * The highest odds ratio was observed in Albuquerque, NM, and the lowest odds ratio was observed in New York, NY.
+
 * For most large US cities, homicides with female victims have higher odds of being resolved than those with male victims. A few cities are exceptions where homicides with male victims were more likely to be resolved: Albuquerque, NM; Stockton, CA; Fresno, CA; Nashville, TN; Richmond, VA. One thing to note is that the ORs for several of these cities had very wide 95% CIs and the results were statistically insignificant since the 95% CIs cross the null value of OR = 1.
+
 * Larger urban centres generally have OR < 1 with narrower 95% CIs, possibly due to a larger sample size from a larger population. Some examples include New York, NY; Chicago, IL; Pittsburgh, PA; San Francisco, CA.
 
 
@@ -288,12 +294,16 @@ First, we want to build a regression model for birthweight based on hypothesized
 I decide to research literature for known risk factors of low birthweight and compose my regression model as such. Based on this [article](https://www.cedars-sinai.org/health-library/diseases-and-conditions---pediatrics/v/very-low-birth-weight.html), I have decided to include the following risk factors:
 
 * Mother's weight gain during pregnancy in pounds (`wtgain`)
+
 * Previous number of low birth weight babies (`pnumlbw`)
+
 * Average number of cigarettes smoked per day during pregnancy (`smoken`)
+
 * Race of parents (`frace` and `mrace`)
+
 * Mother's age at delivery in years (`momage`)
 
-Of course there are other potential factors from this dataset that could affect low birthweight, but I do not want to include too many variables due to concerns about sample size.
+Of course there are other potential factors from this dataset that could affect birthweight, but I do not want to include too many variables due to concerns about sample size.
 
 ```{r build model}
 own_mod = lm(bwt ~ wtgain + pnumlbw + smoken + frace + mrace + momage, data = childbw_df)
@@ -306,7 +316,12 @@ childbw_df %>%
   modelr::add_predictions(own_mod) %>% 
   modelr::add_residuals(own_mod) %>% 
   ggplot(aes(x = pred, y = resid)) +
-  geom_point()
+  geom_point() +
+  labs(
+    title = "Model Residual against Fitted Values for Linear Regression Model on Child Birthweight",
+    x = "Predicted Values",
+    y = "Residual"
+  )
 ```
 
 Looking at the residual plot, there doesn't seem to be any non-random pattern to the plot, hence we might not be able to add another predictor to the model.
@@ -358,4 +373,4 @@ cv_df %>%
   )
 ```
 
-Wow...my model is crap...
+Looking at the violin plots, we see that the model containing three-way interactions between head circumference, length at birth, and sex of the baby has the lowest RMSEs, which suggests that it has the best performance. The model I built had the worst performance, probably because it failed to acocunt for interactions between some of the variables in the model. 
